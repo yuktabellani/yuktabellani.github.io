@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pharmacy Ordering Workflow</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Georgia, serif;
+    background: linear-gradient(160deg, #0a1628 0%, #0d2240 60%, #0a1628 100%);
+    min-height: 100vh;
+    padding: 40px 24px;
+    color: #e8eef7;
+  }
+  .container { max-width: 720px; margin: 0 auto; }
+  .header { text-align: center; margin-bottom: 44px; }
+  .header .eyebrow {
+    font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase;
+    color: #7aabcc; margin-bottom: 10px; font-family: monospace;
+  }
+  .header h1 {
+    font-size: 26px; font-weight: normal; color: #d4e8f5; letter-spacing: 0.02em;
+  }
+  .divider {
+    width: 48px; height: 2px;
+    background: linear-gradient(90deg, #1a6fae, #2196a3);
+    margin: 14px auto 0; border-radius: 2px;
+  }
+  .step-row { display: flex; align-items: flex-start; gap: 18px; cursor: pointer; }
+  .icon-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+  .icon-circle {
+    width: 52px; height: 52px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0; transition: all 0.25s ease;
+  }
+  .card {
+    flex: 1; border-radius: 10px; padding: 14px 18px;
+    transition: all 0.25s ease; background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+  .card-header { display: flex; align-items: center; justify-content: space-between; }
+  .step-meta { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: #8abccc; font-family: monospace; margin-bottom: 3px; }
+  .step-title { font-size: 16px; font-weight: bold; color: #d4e8f5; }
+  .chevron { font-size: 12px; color: rgba(255,255,255,0.3); transition: transform 0.2s; flex-shrink: 0; margin-left: 12px; }
+  .detail { margin-top: 10px; padding-top: 10px; font-size: 13.5px; line-height: 1.6; color: #aac8e0; display: none; }
+  .connector { display: flex; align-items: center; margin-left: 26px; height: 36px; }
+  .connector-line { width: 2px; height: 100%; margin-left: 24px; flex-shrink: 0; position: relative; }
+  .connector-arrow {
+    position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 5px solid transparent; border-right: 5px solid transparent;
+  }
+  .edge-label { margin-left: 14px; font-size: 10.5px; font-family: monospace; color: rgba(150,200,220,0.5); font-style: italic; }
+  .footer {
+    margin-top: 40px; padding: 16px 20px;
+    background: rgba(255,255,255,0.03); border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .footer-icon { font-size: 18px; }
+  .footer-text { font-size: 12px; color: #7a9ab5; line-height: 1.5; }
+  .footer-text strong { color: #a0c0d8; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="eyebrow">Pharmaceutical Supply Chain</div>
+    <h1>Large Pharmacy Ordering Workflow</h1>
+    <div class="divider"></div>
+  </div>
+
+  <div id="flow"></div>
+
+  <div class="footer">
+    <div class="footer-icon">💡</div>
+    <div class="footer-text"><strong>Click any step</strong> to expand details. The full cycle is nearly touchless for store pharmacists — a few minutes of review rather than hours of manual ordering.</div>
+  </div>
+</div>
+
+<script>
+const steps = [
+  { id:1, icon:"🏪", label:"PMS Inventory Monitoring", sublabel:"Pharmacy Management System", detail:"Perpetual inventory tracks on-hand stock vs. reorder thresholds in real time across all pharmacy locations.", color:"#0f4c81", edgeLabel:"Inventory falls below threshold" },
+  { id:2, icon:"🧠", label:"OrderInsite Optimization", sublabel:"Order Intelligence Layer", detail:"Analyzes demand signals, GCR compliance ratios, rebate structures & multi-supplier pricing to build the optimal order recommendation.", color:"#1a6fae", edgeLabel:"Optimized order recommendation" },
+  { id:3, icon:"📤", label:"EDI 850 Sent", sublabel:"Purchase Order Transmission", detail:"Order is split across primary & secondary wholesalers (McKesson, Cardinal Health, Cencora) and transmitted electronically as an EDI 850 Purchase Order.", color:"#2196a3", edgeLabel:"EDI 855 acknowledgment returned" },
+  { id:4, icon:"✅", label:"Wholesaler Confirms", sublabel:"EDI 855 + 856", detail:"Wholesaler sends a PO Acknowledgment (EDI 855), then an Advance Ship Notice (EDI 856) when the shipment leaves the distribution center.", color:"#1d8f6e", edgeLabel:"Physical delivery to store" },
+  { id:5, icon:"📦", label:"Receiving & Reconciliation", sublabel:"Delivery Verification", detail:"Actual receipt at the store is matched against the Advance Ship Notice. Any discrepancies in quantity or product are automatically flagged.", color:"#2a7d4f", edgeLabel:"EDI 810 invoice issued" },
+  { id:6, icon:"🧾", label:"Invoice Matching", sublabel:"EDI 810", detail:"The wholesaler's invoice is matched against the original PO and confirmed receipt. Mismatches trigger automated alerts for resolution.", color:"#5a6e2f", edgeLabel:"Chargeback & compliance data" },
+  { id:7, icon:"📊", label:"Chargebacks & Reporting", sublabel:"EDI 844 / 849 / 867", detail:"Returns, manufacturer chargebacks, and Product Transfer & Resale Reports (867) close the loop on the full order cycle and feed back into inventory planning.", color:"#7a5c2e", edgeLabel:null },
+];
+
+const flow = document.getElementById('flow');
+
+steps.forEach((step, i) => {
+  const isLast = i === steps.length - 1;
+
+  // Step row
+  const row = document.createElement('div');
+  row.className = 'step-row';
+  row.innerHTML = `
+    <div class="icon-col">
+      <div class="icon-circle" id="circle-${step.id}" style="
+        background: radial-gradient(circle at 35% 35%, ${step.color}55, ${step.color}33);
+        border: 2px solid ${step.color}66;
+      ">${step.icon}</div>
+    </div>
+    <div class="card" id="card-${step.id}">
+      <div class="card-header">
+        <div>
+          <div class="step-meta">Step ${step.id} · ${step.sublabel}</div>
+          <div class="step-title">${step.label}</div>
+        </div>
+        <div class="chevron" id="chev-${step.id}">▼</div>
+      </div>
+      <div class="detail" id="detail-${step.id}" style="border-top: 1px solid ${step.color}44;">${step.detail}</div>
+    </div>
+  `;
+
+  row.addEventListener('click', () => {
+    const detail = document.getElementById(`detail-${step.id}`);
+    const card = document.getElementById(`card-${step.id}`);
+    const circle = document.getElementById(`circle-${step.id}`);
+    const chev = document.getElementById(`chev-${step.id}`);
+    const open = detail.style.display === 'block';
+    detail.style.display = open ? 'none' : 'block';
+    chev.style.transform = open ? 'none' : 'rotate(180deg)';
+    card.style.background = open ? 'rgba(255,255,255,0.03)' : `linear-gradient(135deg, ${step.color}22, ${step.color}0a)`;
+    card.style.border = open ? '1px solid rgba(255,255,255,0.07)' : `1px solid ${step.color}55`;
+    circle.style.background = open ? `radial-gradient(circle at 35% 35%, ${step.color}55, ${step.color}33)` : `radial-gradient(circle at 35% 35%, ${step.color}cc, ${step.color})`;
+    circle.style.border = open ? `2px solid ${step.color}66` : `2px solid ${step.color}ff`;
+    circle.style.boxShadow = open ? 'none' : `0 0 20px ${step.color}55`;
+  });
+
+  flow.appendChild(row);
+
+  // Connector
+  if (!isLast) {
+    const nextColor = steps[i+1].color;
+    const conn = document.createElement('div');
+    conn.className = 'connector';
+    conn.innerHTML = `
+      <div class="connector-line" style="background: linear-gradient(to bottom, ${step.color}88, ${nextColor}88);">
+        <div class="connector-arrow" style="border-top: 6px solid ${nextColor}aa;"></div>
+      </div>
+      ${step.edgeLabel ? `<div class="edge-label">${step.edgeLabel}</div>` : ''}
+    `;
+    flow.appendChild(conn);
+  }
+});
+</script>
+</body>
+</html>
+
